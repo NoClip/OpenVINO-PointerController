@@ -2,46 +2,52 @@
 This is a sample class for a model. You may choose to use it as-is or make any changes to it.
 This has been provided just to give you an idea of how to structure your model class.
 '''
-#models\landmarks-regression-retail-0009\FP16\landmarks-regression-retail-0009
+# models\landmarks-regression-retail-0009\FP16\landmarks-regression-retail-0009
 
-class Model_X:
-    '''
-    Class for the Face Detection Model.
-    '''
-    def __init__(self, model_name, device='CPU', extensions=None):
-        '''
-        TODO: Use this to set your instance variables.
-        '''
-        raise NotImplementedError
+import cv2
+from model import ModelBase
 
-    def load_model(self):
-        '''
-        TODO: You will need to complete this method.
-        This method is for loading the model to the device specified by the user.
-        If your model requires any Plugins, this is where you can load them.
-        '''
-        raise NotImplementedError
 
-    def predict(self, image):
-        '''
-        TODO: You will need to complete this method.
-        This method is meant for running predictions on the input image.
-        '''
-        raise NotImplementedError
+class FacialLandmarksModel(ModelBase):
+    '''
+    Class for the facial landmarks regression Model, inherited from ModelBase.
+    '''
 
-    def check_model(self):
-        raise NotImplementedError
+    def preprocess_output(self, outputs, inputs):
+        # The net outputs a blob with the shape: [1, 10],
+        # containing a row-vector of 10 floating point values
+        # for five landmarks coordinates in the form (x0, y0, x1, y1, ..., x5, y5).
+        # All the coordinates are normalized to be in range [0,1].
 
-    def preprocess_input(self, image):
-    '''
-    Before feeding the data into the model for inference,
-    you might have to preprocess it. This function is where you can do that.
-    '''
-        raise NotImplementedError
+        output = outputs[self.output_names[0]].buffer[0]
+        image = inputs[0]
+        cropped_eyes = []
 
-    def preprocess_output(self, outputs):
-    '''
-    Before feeding the output of this model to the next model,
-    you might have to preprocess the output. This function is where you can do that.
-    '''
-        raise NotImplementedError
+        h, w = image.shape[0:2]
+
+        xl, yl = output[0][0][0] * w, output[1][0][0] * h
+        xr, yr = output[2][0][0] * w, output[3][0][0] * h
+
+        # make box for left eye
+        xlmin = int(xl - 20)
+        ylmin = int(yl - 20)
+        xlmax = int(xl + 20)
+        ylmax = int(yl + 20)
+
+        # make box for right eye
+        xrmin = int(xr - 20)
+        yrmin = int(yr - 20)
+        xrmax = int(xr + 20)
+        yrmax = int(yr + 20)
+
+        # cv2.rectangle(image, (xlmin, ylmin), (xlmax, ylmax), (0, 55, 255), 1)
+        # cv2.rectangle(image, (xrmin, yrmin), (xrmax, yrmax), (0, 55, 255), 1)
+        #cv2.rectangle(image, (xmin, ymin), (xmax, ymax), out_color, thickness)
+        
+        cropped_eyes.append(image[ylmin:ylmax, xlmin:xlmax])
+        cropped_eyes.append(image[yrmin:yrmax, xrmin:xrmax])
+
+        coords = [[int(xlmin), int(ylmin), int(xlmax), int(ylmax)],
+                  [int(xrmin), int(yrmin), int(xrmax), int(yrmax)]]
+
+        return coords, cropped_eyes
