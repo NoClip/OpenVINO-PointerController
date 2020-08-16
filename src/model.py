@@ -1,17 +1,47 @@
-'''
-This is a sample class for a model. You may choose to use it as-is or make any changes to it.
-This has been provided just to give you an idea of how to structure your model class.
-'''
+import cv2
+import sys
+from openvino.inference_engine import IECore
+import logging as log
 
-class Model_X:
+log.basicConfig(level=log.INFO)
+
+class ModelBase:
     '''
-    Class for the Face Detection Model.
+    Base model for all four models used.
     '''
-    def __init__(self, model_name, device='CPU', extensions=None):
+    def __init__(self, model_name, device='CPU', extensions=None, threshold=0.60):
         '''
         TODO: Use this to set your instance variables.
         '''
-        raise NotImplementedError
+        model_weights = model_name+'.bin'
+        model_structure = model_name+'.xml'
+
+        self.threshold = threshold
+        self.ie = IECore()
+        self.net = self.ie.read_network(model=model_structure, weights=model_weights)
+        self.exec_net = None
+        self.device = device
+
+        if extensions and "CPU" in device:
+            self.ie.add_extension(extensions, device)
+
+        self.check_model()
+
+        # depreciated...
+        # self.input_name = next(iter(self.net.inputs))
+        # self.input_shape = self.net.inputs[self.input_name].shape        
+
+        #self.input_name = next(iter(self.net.input_info))
+        #self.input_shape = self.net.input_info[self.input_name].input_data.shape
+
+        self.input_names = list(self.net.input_info.keys())
+        self.input_shapes = [self.net.input_info[i].input_data.shape for i in self.net.input_info.keys()]
+
+        #self.output_name = next(iter(self.net.outputs))
+        #self.output_shape = self.net.outputs[self.output_name].shape
+
+        self.output_names = list(self.net.outputs.keys())
+        self.output_shapes = [self.net.outputs[i].shape for i in self.net.outputs.keys()]
 
     def load_model(self):
         '''
@@ -19,28 +49,65 @@ class Model_X:
         This method is for loading the model to the device specified by the user.
         If your model requires any Plugins, this is where you can load them.
         '''
-        raise NotImplementedError
+        self.exec_net = self.ie.load_network(network=self.net, device_name=self.device, num_requests=0)
 
-    def predict(self, image):
+    def predict(self, inputs):
         '''
         TODO: You will need to complete this method.
         This method is meant for running predictions on the input image.
         '''
-        raise NotImplementedError
+        input_blobs = {}
+        inputs_copy = self.preprocess_input(inputs)
+
+        for i, input_name in enumerate(self.input_names):
+            input_blobs[input_name] = inputs_copy[i]
+
+        #self.exec_net.requests[0].async_infer({self.input_name: image_copy})
+        self.exec_net.requests[0].async_infer(input_blobs)
+        self.exec_net.requests[0].wait(-1)
+        
+        # Depreciated...
+        # outputs = self.exec_net.requests[0].outputs
+        outputs = self.exec_net.requests[0].output_blobs
+
+        proc_output, proc_images = self.preprocess_output(outputs, inputs)
+
+        return proc_output, proc_images
 
     def check_model(self):
-        raise NotImplementedError
+        # Check for unsupported layers
+        if 'CPU' in self.ie.available_devices:
+            supported_layers = self.ie.query_network(network=self.net, device_name=self.device)
+            unsupported_layers = [l for l in self.net.layers.keys() if l not in supported_layers]
 
-    def preprocess_input(self, image):
-    '''
-    Before feeding the data into the model for inference,
-    you might have to preprocess it. This function is where you can do that.
-    '''
-        raise NotImplementedError
+            if unsupported_layers:
+                log.info("Unsupported layers found in face detection model...\n {}".format(unsupported_layers))
+                sys.exit(1)
 
-    def preprocess_output(self, outputs):
-    '''
-    Before feeding the output of this model to the next model,
-    you might have to preprocess the output. This function is where you can do that.
-    '''
-        raise NotImplementedError
+    def preprocess_input(self, inputs):
+        '''
+        Before feeding the data into the model for inference,
+        you might have to preprocess it. This function is where you can do that.
+        '''
+        # Reading and Preprocessing Image
+        inputs_copy = inputs.copy()
+
+        for i, input_shape in enumerate(self.input_shapes):
+            if len(input_shape) == 4:
+                n, c, h, w = input_shape
+
+                inputs_copy[i] = cv2.resize(inputs_copy[i], (w, h))
+                inputs_copy[i] = inputs_copy[i].transpose((2, 0, 1))
+                inputs_copy[i] = inputs_copy[i].reshape((n, c, h, w))
+
+        return inputs_copy
+
+    def preprocess_output(self, outputs, image):
+        '''
+        Before feeding the output of this model to the next model,
+        you might have to preprocess the output. This function is where you can do that.
+        '''
+        return None, None
+
+    def logger(self, msg, var=None):
+        log.info((msg + "\t {}").format(var))
