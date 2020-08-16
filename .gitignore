@@ -1,3 +1,7 @@
 models/
-pointerproj/
+pointer_venv/
 bin/
+.vscode/
+src/__pycache__/
+oldcode
+run.sh
