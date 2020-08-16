@@ -2,46 +2,25 @@
 This is a sample class for a model. You may choose to use it as-is or make any changes to it.
 This has been provided just to give you an idea of how to structure your model class.
 '''
-#models\head-pose-estimation-adas-0001\FP16\head-pose-estimation-adas-0001
+from model import ModelBase
 
-class Model_X:
-    '''
-    Class for the Face Detection Model.
-    '''
-    def __init__(self, model_name, device='CPU', extensions=None):
-        '''
-        TODO: Use this to set your instance variables.
-        '''
-        raise NotImplementedError
 
-    def load_model(self):
-        '''
-        TODO: You will need to complete this method.
-        This method is for loading the model to the device specified by the user.
-        If your model requires any Plugins, this is where you can load them.
-        '''
-        raise NotImplementedError
-
-    def predict(self, image):
-        '''
-        TODO: You will need to complete this method.
-        This method is meant for running predictions on the input image.
-        '''
-        raise NotImplementedError
-
-    def check_model(self):
-        raise NotImplementedError
-
-    def preprocess_input(self, image):
+class HeadPoseModel(ModelBase):
     '''
-    Before feeding the data into the model for inference,
-    you might have to preprocess it. This function is where you can do that.
+    Class for the Head pose estimation Model, inherited from ModelBase.
     '''
-        raise NotImplementedError
 
-    def preprocess_output(self, outputs):
-    '''
-    Before feeding the output of this model to the next model,
-    you might have to preprocess the output. This function is where you can do that.
-    '''
-        raise NotImplementedError
+    def preprocess_output(self, outputs, inputs):
+        # Outputs
+        # name: "angle_y_fc", shape: [1, 1] - Estimated yaw (in degrees).
+        # name: "angle_p_fc", shape: [1, 1] - Estimated pitch (in degrees).
+        # name: "angle_r_fc", shape: [1, 1] - Estimated roll (in degrees).
+
+        image = inputs[0]
+
+        proccessed_output = []
+        proccessed_output.append(outputs["angle_y_fc"].buffer[0][0])
+        proccessed_output.append(outputs['angle_p_fc'].buffer[0][0])
+        proccessed_output.append(outputs['angle_r_fc'].buffer[0][0])
+
+        return proccessed_output, image
