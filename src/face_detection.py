@@ -1,48 +1,30 @@
-'''
-This is a sample class for a model. You may choose to use it as-is or make any changes to it.
-This has been provided just to give you an idea of how to structure your model class.
-'''
+from model import ModelBase
 
-#face-detection-adas-binary-0001\FP32-INT1\face-detection-adas-binary-0001
 
-class Model_X:
+class FaceDetectionModel(ModelBase):
     '''
     Class for the Face Detection Model.
     '''
-    def __init__(self, model_name, device='CPU', extensions=None):
-        '''
-        TODO: Use this to set your instance variables.
-        '''
-        raise NotImplementedError
 
-    def load_model(self):
-        '''
-        TODO: You will need to complete this method.
-        This method is for loading the model to the device specified by the user.
-        If your model requires any Plugins, this is where you can load them.
-        '''
-        raise NotImplementedError
+    def preprocess_output(self, outputs, inputs):
+        # The net outputs blob with shape: [1, 1, N, 7],
+        #   where N is the number of detected bounding boxes.
+        # Each detection has the format [image_id, label, conf, x_min, y_min, x_max, y_max]
 
-    def predict(self, image):
-        '''
-        TODO: You will need to complete this method.
-        This method is meant for running predictions on the input image.
-        '''
-        raise NotImplementedError
+        h, w = inputs[0].shape[0:2]
+        cropped_face_frame = inputs[0]
+        coords = []
+        output = outputs[self.output_names[0]].buffer
 
-    def check_model(self):
-        raise NotImplementedError
+        for box in output[0][0]:
+            conf = box[2]
+            if conf >= self.threshold:
+                xmin = int(box[3] * w)
+                ymin = int(box[4] * h)
+                xmax = int(box[5] * w)
+                ymax = int(box[6] * h)
 
-    def preprocess_input(self, image):
-    '''
-    Before feeding the data into the model for inference,
-    you might have to preprocess it. This function is where you can do that.
-    '''
-        raise NotImplementedError
+                cropped_face_frame = inputs[0][ymin:ymax, xmin:xmax]
+                coords.append((xmin, ymin, xmax, ymax))
 
-    def preprocess_output(self, outputs):
-    '''
-    Before feeding the output of this model to the next model,
-    you might have to preprocess the output. This function is where you can do that.
-    '''
-        raise NotImplementedError
+        return coords, cropped_face_frame
