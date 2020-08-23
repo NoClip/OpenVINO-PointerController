@@ -1,5 +1,5 @@
 models/
-pointer_venv/
+pointer_env/
 bin/
 .vscode/
 src/__pycache__/
