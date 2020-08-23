@@ -92,23 +92,23 @@ def build_argparser():
     parser = ArgumentParser()
 
     parser.add_argument("-fm", "--facemodel", type=str,
-                        default=r"models/face-detection-adas-binary-0001",
-                        help="Path to face detection model, default is models/face-detection-adas-binary-0001")
+                        default=r"models/intel/face-detection-adas-binary-0001/FP32-INT1/face-detection-adas-binary-0001",
+                        help="Path to face detection model, default is models/face-detection-adas-binary-0001models/intel/face-detection-adas-binary-0001/FP32-INT1/face-detection-adas-binary-0001")
 
     parser.add_argument("-gm", "--gazemodel", type=str,
-                        default=r"models/gaze-estimation-adas-0002",
-                        help="Path to gaze estimation model, default is models/gaze-estimation-adas-0002")
+                        default=r"models/intel/gaze-estimation-adas-0002/FP16/gaze-estimation-adas-0002",
+                        help="Path to gaze estimation model, default is models/gaze-estimation-adas-0002/FP16/gaze-estimation-adas-0002")
 
     parser.add_argument("-hm", "--headmodel", type=str,
-                        default=r"models/head-pose-estimation-adas-0001",
-                        help="Path to head pose estimation model, default is models/head-pose-estimation-adas-0001")
+                        default=r"models/intel/head-pose-estimation-adas-0001/FP16/head-pose-estimation-adas-0001",
+                        help="Path to head pose estimation model, default is models/head-pose-estimation-adas-0001/FP16/head-pose-estimation-adas-0001")
 
     parser.add_argument("-lm", "--landmarksmodel", type=str,
-                        default=r"models/landmarks-regression-retail-0009",
-                        help=r"Path to landmarks regression model, default is models/landmarks-regression-retail-0009")
+                        default=r"models/intel/landmarks-regression-retail-0009/FP16/landmarks-regression-retail-0009",
+                        help=r"Path to landmarks regression model, default is models/landmarks-regression-retail-0009/FP16/landmarks-regression-retail-0009")
 
     parser.add_argument("-if", "--inputfile", type=str, default="bin/demo.mp4",
-                        help=r"Path to video file, default is bin/demo.mp4")
+                        help=r"Path to image or video file, default is bin/demo.mp4")
 
     parser.add_argument("-it", "--inputtype", type=str, default="file",
                         help=r"input type (file or cam), default is file")
