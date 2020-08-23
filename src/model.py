@@ -21,6 +21,7 @@ class ModelBase:
         self.net = self.ie.read_network(model=model_structure, weights=model_weights)
         self.exec_net = None
         self.device = device
+        self.model_name = None
 
         if extensions and "CPU" in device:
             self.ie.add_extension(extensions, device)
@@ -58,6 +59,7 @@ class ModelBase:
         '''
         input_blobs = {}
         inputs_copy = self.preprocess_input(inputs)
+
 
         for i, input_name in enumerate(self.input_names):
             input_blobs[input_name] = inputs_copy[i]

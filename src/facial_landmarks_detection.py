@@ -12,6 +12,9 @@ class FacialLandmarksModel(ModelBase):
     '''
     Class for the facial landmarks regression Model, inherited from ModelBase.
     '''
+    def __init__(self, model_name, device='CPU', extensions=None, threshold=0.60):
+        super().__init__(model_name, device, extensions, threshold)
+        self.model_name = "Facial landmarks model"
 
     def preprocess_output(self, outputs, inputs):
         # The net outputs a blob with the shape: [1, 10],
