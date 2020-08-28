@@ -108,7 +108,7 @@ def plot_all_files():
         "Input Processing Time",
         "Output Processing Time",
         "Inference Time",
-        "Frame per second",
+        "Frames per second",
     ]
     ylabels = ["seconds", "seconds", "seconds", "seconds", "fps"]
 
