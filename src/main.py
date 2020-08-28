@@ -1,6 +1,3 @@
-# from openvino.inference_engine import IENetwork, IECore
-# import os
-import math
 import cv2
 from argparse import ArgumentParser
 import logging as log
@@ -25,7 +22,7 @@ log.basicConfig(level=log.INFO)
 def init_vars():
     args = build_argparser().parse_args()
 
-    global face_model, gaze_model, head_model, landmarks_model, device, input_type, input_file, threshold
+    global face_model, gaze_model, head_model, landmarks_model, device, input_type, input_file, threshold, benchmark
 
     face_model = args.facemodel
     gaze_model = args.gazemodel
@@ -36,6 +33,7 @@ def init_vars():
     input_type = args.inputtype.lower()
     input_file = args.inputfile
     threshold = args.threshold
+    benchmark = args.benchmark
     #output_path = args.output_path
 
 def logger(msg, var=None):
@@ -61,28 +59,56 @@ def start_infer():
 
     feed.load_data()
 
+
     for flag, frame in feed.next_batch():
         if not flag:
             break
-
-        key_pressed = cv2.waitKey(60)
+        
+        if not benchmark:
+            key_pressed = cv2.waitKey(60)
 
         face_output, cropped_face_frame = face_network.predict([frame])
         head_output, cropped_face_frame = head_network.predict([cropped_face_frame])
         landmarks_output, cropped_eyes = landmarks_network.predict([cropped_face_frame])
         mouse_coords, gaze_output = gaze_network.predict([head_output, cropped_eyes[0], cropped_eyes[1]])
         
-        frame_preview = cv2.resize(frame, (500, 500))
+        if not benchmark:
+            cv2.imshow('preview', cropped_face_frame)
 
-        cv2.imshow('preview', cropped_face_frame)
+            try:
+                mouse_control.move(mouse_coords[0], mouse_coords[1])
+            except:
+                pass
 
-        mouse_control.move(mouse_coords[0], mouse_coords[1])
+            if key_pressed == 27:
+                break
 
-        if key_pressed == 27:
-            break
+    if benchmark:
+        face_network.print_benchmark()
+        head_network.print_benchmark()
+        landmarks_network.print_benchmark()
+        gaze_network.print_benchmark()
 
     cv2.destroyAllWindows()
     feed.close()
+
+
+        # f=open(path, 'r')
+        # load_time.append(float(f.readline()))
+        # inference_time.append(float(f.readline()))
+        # fps.append(float(f.readline()))
+         
+# def plot_file(filename):
+#     load_time=[]
+#     inference_time=[]
+#     fps=[]
+    
+#     for path in paths:
+#         if os.path.isfile(path):
+#             f=open(path, 'r')
+#             load_time.append(float(f.readline()))
+#             inference_time.append(float(f.readline()))
+#             fps.append(float(f.readline()))
 
 def build_argparser():
     """
@@ -128,6 +154,10 @@ def build_argparser():
     parser.add_argument("-t", "--threshold", type=float, default=0.5,
                         help=r"Probability threshold for detections filtering"
                         "(0.5 by default)")
+
+    parser.add_argument("-bm", "--benchmark", type=bool, default=False,
+                        help=r"Run benchmark and calculate Model load time, Input/Output processing time and Inference time for each model"
+                        "(False by default)")                        
     return parser
 
 def main():
