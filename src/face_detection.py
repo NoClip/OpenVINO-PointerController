@@ -8,6 +8,7 @@ class FaceDetectionModel(ModelBase):
     def __init__(self, model_name, device='CPU', extensions=None, threshold=0.60):
         super().__init__(model_name, device, extensions, threshold)
         self.model_name = "Face detection model"
+        self.model_shortname = "FD"
 
     def preprocess_output(self, outputs, inputs):
         # The net outputs blob with shape: [1, 1, N, 7],

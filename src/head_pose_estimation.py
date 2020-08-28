@@ -12,6 +12,7 @@ class HeadPoseModel(ModelBase):
     def __init__(self, model_name, device='CPU', extensions=None, threshold=0.60):
         super().__init__(model_name, device, extensions, threshold)
         self.model_name = "Head pose model"
+        self.model_shortname = "HP"
 
     def preprocess_output(self, outputs, inputs):
         # Outputs
