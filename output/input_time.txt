@@ -1,0 +1,12 @@
+Face detection model,FD,FP32-INT1,10.402367703994969
+Head pose model,HP,FP32,10.36136362599791
+Facial landmarks model,FL,FP32,10.26862015700317
+Gaze estimation model,GZ,FP32,10.268122351000784
+Face detection model,FD,FP32-INT1,10.817189406996476
+Head pose model,HP,FP16,10.73684008300188
+Facial landmarks model,FL,FP16,10.734183653010405
+Gaze estimation model,GZ,FP16,10.748148112004856
+Face detection model,FD,FP32-INT1,10.67431303599733
+Head pose model,HP,FP16-INT8,10.739808579004603
+Facial landmarks model,FL,FP16-INT8,10.72410699899774
+Gaze estimation model,GZ,FP16-INT8,10.721741772009409
