@@ -69,8 +69,8 @@ def plot_file(filename, title, ylabel):
         [0, 1, 2, 4, 5, 6, 8, 9, 10, 12, 13, 14],
         (
             "FP32",
-            "FP16",
-            "INT8",
+            "FP32",
+            "FP32",
             "FP32",
             "FP16",
             "INT8",
