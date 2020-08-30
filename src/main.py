@@ -87,7 +87,7 @@ def start_infer():
             if preview:
                 cv2.imshow("preview", cropped_face_frame)
 
-            # using a dummy try/catch to prevent PyAutoGUI messeges 
+            # using a dummy try/catch to prevent PyAutoGUI fail-safe messeges 
             # when mouse reaches the screen edge
             try:
                 mouse_control.move(mouse_coords[0], mouse_coords[1])
