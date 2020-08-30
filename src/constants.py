@@ -1,0 +1,11 @@
+FACE_MODEL_NAME = "Face detection model"
+FACE_MODEL_SHORTNAME = "FD"
+
+GAZE_MODEL_NAME = "Gaze estimation model"
+GAZE_MODEL_SHORTNAME = "GZ"
+
+HEAD_MODEL_NAME = "Head pose model"
+HEAD_MODEL_SHORTNAME = "HP"
+
+LANDMARKS_MODEL_NAME = "Facial landmarks model"
+LANDMARKS_MODEL_SHORTNAME = "FL"
