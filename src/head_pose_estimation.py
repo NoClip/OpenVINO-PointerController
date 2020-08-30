@@ -1,18 +1,17 @@
-'''
-This is a sample class for a model. You may choose to use it as-is or make any changes to it.
-This has been provided just to give you an idea of how to structure your model class.
-'''
 from model import ModelBase
+import constants
 
 
 class HeadPoseModel(ModelBase):
-    '''
+    """
     Class for the Head pose estimation Model, inherited from ModelBase.
-    '''
-    def __init__(self, model_name, device='CPU', extensions=None, threshold=0.60):
-        super().__init__(model_name, device, extensions, threshold)
-        self.model_name = "Head pose model"
-        self.model_shortname = "HP"
+    """
+
+    def get_model_name(self):
+        return constants.HEAD_MODEL_NAME
+
+    def get_model_shortname(self):
+        return constants.HEAD_MODEL_SHORTNAME
 
     def preprocess_output(self, outputs, inputs):
         # Outputs
@@ -24,7 +23,7 @@ class HeadPoseModel(ModelBase):
 
         proccessed_output = []
         proccessed_output.append(outputs["angle_y_fc"].buffer[0][0])
-        proccessed_output.append(outputs['angle_p_fc'].buffer[0][0])
-        proccessed_output.append(outputs['angle_r_fc'].buffer[0][0])
+        proccessed_output.append(outputs["angle_p_fc"].buffer[0][0])
+        proccessed_output.append(outputs["angle_r_fc"].buffer[0][0])
 
         return proccessed_output, image

@@ -25,8 +25,9 @@ class ModelBase:
         self.net = self.ie.read_network(model=model_structure, weights=model_weights)
         self.exec_net = None
         self.device = device
-        self.model_name = None
-        self.model_shortname = None
+
+        self.model_name = self.get_model_name()
+        self.model_shortname = self.get_model_shortname()
         self.model_precision = model_structure.split("/")[-2]
 
         self.init_benchmark()
@@ -62,6 +63,8 @@ class ModelBase:
         This method is for loading the model to the device specified by the user.
         If your model requires any Plugins, this is where you can load them.
         """
+        self.logger("Loading model...")
+
         self.model_load_time = self.get_time()
         self.exec_net = self.ie.load_network(
             network=self.net, device_name=self.device, num_requests=0
@@ -73,6 +76,7 @@ class ModelBase:
         TODO: You will need to complete this method.
         This method is meant for running predictions on the input image.
         """
+        self.logger("Predicting...")
 
         input_blobs = {}
 
@@ -102,6 +106,8 @@ class ModelBase:
         if self.output_start_time is None:
             self.output_start_time = self.get_time()
 
+        self.logger("Preprocessing output(s)...")
+
         proc_output, proc_images = self.preprocess_output(outputs, inputs)
 
         self.output_end_time = self.get_time()
@@ -109,6 +115,8 @@ class ModelBase:
         return proc_output, proc_images
 
     def check_model(self):
+        self.logger("Checking for unsupported layer...")
+
         # Check for unsupported layers
         if "CPU" in self.ie.available_devices:
             supported_layers = self.ie.query_network(
@@ -126,12 +134,15 @@ class ModelBase:
                 )
                 sys.exit(1)
 
+        self.logger("OK.")
+
     def preprocess_input(self, inputs):
         """
         Before feeding the data into the model for inference,
         you might have to preprocess it. This function is where you can do that.
         """
-        # Reading and Preprocessing Image
+        # Reading and Preprocessing
+        self.logger("Preprocessing input(s)...")
 
         inputs_copy = inputs.copy()
 
@@ -152,8 +163,14 @@ class ModelBase:
         """
         return None, None
 
-    def logger(self, msg, var=None):
-        log.info((msg + "\t {}").format(var))
+    def get_model_name(self):
+        return ""
+
+    def get_model_shortname(self):
+        return ""
+
+    def logger(self, message):
+        log.info("{}: [{}] {}".format(self.get_time(), self.model_name, message))
 
     def init_benchmark(self):
         # model loading time, done.
@@ -221,4 +238,3 @@ class ModelBase:
     def get_time(self):
         return time.perf_counter()
         # return time.time()
-

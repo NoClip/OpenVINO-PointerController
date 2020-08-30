@@ -1,21 +1,17 @@
-'''
-This is a sample class for a model. You may choose to use it as-is or make any changes to it.
-This has been provided just to give you an idea of how to structure your model class.
-'''
-# models\landmarks-regression-retail-0009\FP16\landmarks-regression-retail-0009
-
-import cv2
 from model import ModelBase
+import constants
 
 
 class FacialLandmarksModel(ModelBase):
-    '''
+    """
     Class for the facial landmarks regression Model, inherited from ModelBase.
-    '''
-    def __init__(self, model_name, device='CPU', extensions=None, threshold=0.60):
-        super().__init__(model_name, device, extensions, threshold)
-        self.model_name = "Facial landmarks model"
-        self.model_shortname = "FL"
+    """
+
+    def get_model_name(self):
+        return constants.LANDMARKS_MODEL_NAME
+
+    def get_model_shortname(self):
+        return constants.LANDMARKS_MODEL_SHORTNAME
 
     def preprocess_output(self, outputs, inputs):
         # The net outputs a blob with the shape: [1, 10],
@@ -46,12 +42,14 @@ class FacialLandmarksModel(ModelBase):
 
         # cv2.rectangle(image, (xlmin, ylmin), (xlmax, ylmax), (0, 55, 255), 1)
         # cv2.rectangle(image, (xrmin, yrmin), (xrmax, yrmax), (0, 55, 255), 1)
-        #cv2.rectangle(image, (xmin, ymin), (xmax, ymax), out_color, thickness)
-        
+        # cv2.rectangle(image, (xmin, ymin), (xmax, ymax), out_color, thickness)
+
         cropped_eyes.append(image[ylmin:ylmax, xlmin:xlmax])
         cropped_eyes.append(image[yrmin:yrmax, xrmin:xrmax])
 
-        coords = [[int(xlmin), int(ylmin), int(xlmax), int(ylmax)],
-                  [int(xrmin), int(yrmin), int(xrmax), int(yrmax)]]
+        coords = [
+            [int(xlmin), int(ylmin), int(xlmax), int(ylmax)],
+            [int(xrmin), int(yrmin), int(xrmax), int(yrmax)],
+        ]
 
         return coords, cropped_eyes

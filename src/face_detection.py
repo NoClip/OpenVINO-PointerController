@@ -1,14 +1,17 @@
 from model import ModelBase
+import constants
 
 
 class FaceDetectionModel(ModelBase):
-    '''
+    """
     Class for the Face Detection Model.
-    '''
-    def __init__(self, model_name, device='CPU', extensions=None, threshold=0.60):
-        super().__init__(model_name, device, extensions, threshold)
-        self.model_name = "Face detection model"
-        self.model_shortname = "FD"
+    """
+
+    def get_model_name(self):
+        return constants.FACE_MODEL_NAME
+
+    def get_model_shortname(self):
+        return constants.FACE_MODEL_SHORTNAME
 
     def preprocess_output(self, outputs, inputs):
         # The net outputs blob with shape: [1, 1, N, 7],

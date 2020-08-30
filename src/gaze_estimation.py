@@ -1,14 +1,17 @@
 from model import ModelBase
+import constants
 
 
 class GazeModel(ModelBase):
-    '''
+    """
     Class for the Gaze direction estimation Model.
-    '''
-    def __init__(self, model_name, device='CPU', extensions=None, threshold=0.60):
-        super().__init__(model_name, device, extensions, threshold)
-        self.model_name = "Gaze estimation model"
-        self.model_shortname = "GZ"
+    """
+
+    def get_model_name(self):
+        return constants.GAZE_MODEL_NAME
+
+    def get_model_shortname(self):
+        return constants.GAZE_MODEL_SHORTNAME
 
     def preprocess_output(self, outputs, inputs):
         # The net outputs a blob (gaze_vector) with the shape: [1, 3],
