@@ -57,11 +57,6 @@ def plot_file(filename, title, ylabel):
             color=colors[i],
             label=model_names[i][0],
         )
-        # for idx,rect in enumerate(pltbar):
-        #     height = rect.get_height()
-        #     ax.text(rect.get_x() + rect.get_width()/2., 1.05*height,
-        #             data[i][idx],
-        #             ha='center', va='bottom', rotation=0)
 
     plt.ylabel(ylabel)
     plt.title(title)
@@ -83,16 +78,12 @@ def plot_file(filename, title, ylabel):
         ),
     )
 
-    # for i, v in enumerate([0, 1, 2, 4, 5, 6, 8, 9, 10, 12, 13, 14]):
-    #     ax.text(v + 3, i + .25, str(v), color='blue', fontweight='bold')
-
-    plt.legend(framealpha=0.1)
+    plt.legend(loc="upper center", bbox_to_anchor=(0.5, -0.05), shadow=True, ncol=2)
 
     plt.tight_layout()
     imagefilename = "output/{}.png".format(filename.split(".")[0])
     print("Saving image to {}".format(imagefilename))
     fig.savefig(imagefilename)
-    # plt.show()
 
 
 def plot_all_files():
