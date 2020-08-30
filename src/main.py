@@ -1,3 +1,4 @@
+import os
 import cv2
 from argparse import ArgumentParser
 import logging as log
@@ -31,11 +32,6 @@ def init_vars():
     benchmark = args.benchmark
     preview = args.preview
 
-
-def logger(msg, var=None):
-    log.info((msg + "\t {}").format(var))
-
-
 def start_infer():
     feed = None
     key_pressed = None
@@ -43,6 +39,10 @@ def start_infer():
     if input_type == "cam":
         feed = InputFeeder(input_type="cam")
     else:
+        if not os.path.isfile(input_file):
+            log.error("cannot find file {}".format(input_file))
+            exit(1)
+
         feed = InputFeeder(input_type="video", input_file=input_file)
 
     face_network = FaceDetectionModel(
@@ -78,14 +78,17 @@ def start_infer():
         face_output, cropped_face_frame = face_network.predict([frame])
         head_output, cropped_face_frame = head_network.predict([cropped_face_frame])
         landmarks_output, cropped_eyes = landmarks_network.predict([cropped_face_frame])
-        mouse_coords, gaze_output = gaze_network.predict(
-            [head_output, cropped_eyes[0], cropped_eyes[1]]
-        )
+        mouse_coords, gaze_output = gaze_network.predict([head_output, cropped_eyes[0], cropped_eyes[1]])
 
+        # disable preview and mouse control while benchmarking
+        # to make it more accurate
         if not benchmark:
+            # Input user from preview argument
             if preview:
                 cv2.imshow("preview", cropped_face_frame)
 
+            # using a dummy try/catch to prevent PyAutoGUI messeges 
+            # when mouse reaches the screen edge
             try:
                 mouse_control.move(mouse_coords[0], mouse_coords[1])
             except:
@@ -93,7 +96,8 @@ def start_infer():
 
             if key_pressed == 27:
                 break
-
+    
+    # save benchmarks values to output directory
     if benchmark:
         face_network.print_benchmark()
         head_network.print_benchmark()
@@ -102,7 +106,6 @@ def start_infer():
 
     cv2.destroyAllWindows()
     feed.close()
-
 
 def build_argparser():
     """
@@ -206,17 +209,15 @@ def build_argparser():
         "-p",
         "--preview",
         type=bool,
-        default=False,
-        help=r"Show face preview while predection " "(True by default)",
+        default=True,
+        help=r"Show frames preview while predection " "(True by default)",
     )
 
     return parser
 
-
 def main():
     init_vars()
     start_infer()
-
 
 if __name__ == "__main__":
     main()

@@ -1,3 +1,4 @@
+import os
 import time
 import cv2
 import sys
@@ -16,24 +17,40 @@ class ModelBase:
         """
         TODO: Use this to set your instance variables.
         """
+        self.exec_net = None
+        self.device = device
+        self.threshold = threshold
+
+        self.model_name = self.get_model_name()
+        self.model_shortname = self.get_model_shortname()
+
         model_name = model_name.replace(".xml", "").replace(".bin", "")
         model_weights = model_name + ".bin"
         model_structure = model_name + ".xml"
 
-        self.threshold = threshold
+        if not os.path.isfile(model_weights):
+            self.logger("cannot find file {}".format(model_weights), True)
+            exit(1)
+
+        if not os.path.isfile(model_structure):
+            self.logger("cannot find file {}".format(model_structure), True)
+            exit(1)
+
+        self.model_precision = model_structure.split("/")[-2]
+
+
         self.ie = IECore()
         self.net = self.ie.read_network(model=model_structure, weights=model_weights)
-        self.exec_net = None
-        self.device = device
 
-        self.model_name = self.get_model_name()
-        self.model_shortname = self.get_model_shortname()
-        self.model_precision = model_structure.split("/")[-2]
 
         self.init_benchmark()
 
-        if extensions and "CPU" in device:
-            self.ie.add_extension(extensions, device)
+        try:
+            if extensions and "CPU" in device:
+                self.ie.add_extension(extensions, device)
+        except Exception as e:
+            self.logger("Error while loading extensions\n{}".format(e), is_error=True)
+
 
         self.check_model()
 
@@ -46,16 +63,14 @@ class ModelBase:
 
         self.input_names = list(self.net.input_info.keys())
         self.input_shapes = [
-            self.net.input_info[i].input_data.shape for i in self.net.input_info.keys()
-        ]
+            self.net.input_info[i].input_data.shape for i in self.net.input_info.keys()]
 
         # self.output_name = next(iter(self.net.outputs))
         # self.output_shape = self.net.outputs[self.output_name].shape
 
         self.output_names = list(self.net.outputs.keys())
         self.output_shapes = [
-            self.net.outputs[i].shape for i in self.net.outputs.keys()
-        ]
+            self.net.outputs[i].shape for i in self.net.outputs.keys()]
 
     def load_model(self):
         """
@@ -64,12 +79,13 @@ class ModelBase:
         If your model requires any Plugins, this is where you can load them.
         """
         self.logger("Loading model...")
-
-        self.model_load_time = self.get_time()
-        self.exec_net = self.ie.load_network(
-            network=self.net, device_name=self.device, num_requests=0
-        )
-        self.model_load_time = self.get_time() - self.model_load_time
+        try:
+            self.model_load_time = self.get_time()
+            self.exec_net = self.ie.load_network(
+                network=self.net, device_name=self.device, num_requests=0)
+            self.model_load_time = self.get_time() - self.model_load_time
+        except Exception as e:
+            self.logger("Error while loading model\n{}".format(e), is_error=True)     
 
     def predict(self, inputs):
         """
@@ -92,10 +108,12 @@ class ModelBase:
 
         if self.predict_start_time is None:
             self.predict_start_time = self.get_time()
-
-        # self.exec_net.requests[0].async_infer({self.input_name: image_copy})
-        self.exec_net.requests[0].async_infer(input_blobs)
-        self.exec_net.requests[0].wait(-1)
+        try:
+            # self.exec_net.requests[0].async_infer({self.input_name: image_copy})
+            self.exec_net.requests[0].async_infer(input_blobs)
+            self.exec_net.requests[0].wait(-1)
+        except Exception as e:
+            self.logger("Error while Predicting\n{}".format(e), is_error=True)
 
         self.predict_end_time = self.get_time()
 
@@ -103,12 +121,16 @@ class ModelBase:
         # outputs = self.exec_net.requests[0].outputs
         outputs = self.exec_net.requests[0].output_blobs
 
+        # only assign start_time once
         if self.output_start_time is None:
             self.output_start_time = self.get_time()
 
         self.logger("Preprocessing output(s)...")
-
-        proc_output, proc_images = self.preprocess_output(outputs, inputs)
+        proc_output, proc_images = None
+        try:
+            proc_output, proc_images = self.preprocess_output(outputs, inputs)
+        except Exception as e:
+            self.logger("Error while preprocessing output\n{}".format(e), is_error=True)
 
         self.output_end_time = self.get_time()
 
@@ -116,23 +138,25 @@ class ModelBase:
 
     def check_model(self):
         self.logger("Checking for unsupported layer...")
-
-        # Check for unsupported layers
-        if "CPU" in self.ie.available_devices:
-            supported_layers = self.ie.query_network(
-                network=self.net, device_name=self.device
-            )
-            unsupported_layers = [
-                l for l in self.net.layers.keys() if l not in supported_layers
-            ]
-
-            if unsupported_layers:
-                log.info(
-                    "Unsupported layers found in face detection model...\n {}".format(
-                        unsupported_layers
-                    )
+        try:
+            # Check for unsupported layers
+            if "CPU" in self.ie.available_devices:
+                supported_layers = self.ie.query_network(
+                    network=self.net, device_name=self.device
                 )
-                sys.exit(1)
+                unsupported_layers = [
+                    l for l in self.net.layers.keys() if l not in supported_layers
+                ]
+
+                if unsupported_layers:
+                    log.info(
+                        "Unsupported layers found in face detection model...\n {}".format(
+                            unsupported_layers
+                        )
+                    )
+                    sys.exit(1)
+        except Exception as e:
+            self.logger("Error while checking for unsupported layer\n{}".format(e), is_error=True)
 
         self.logger("OK.")
 
@@ -143,16 +167,18 @@ class ModelBase:
         """
         # Reading and Preprocessing
         self.logger("Preprocessing input(s)...")
-
         inputs_copy = inputs.copy()
 
-        for i, input_shape in enumerate(self.input_shapes):
-            if len(input_shape) == 4:
-                n, c, h, w = input_shape
+        try:
+            for i, input_shape in enumerate(self.input_shapes):
+                if len(input_shape) == 4:
+                    n, c, h, w = input_shape
 
-                inputs_copy[i] = cv2.resize(inputs_copy[i], (w, h))
-                inputs_copy[i] = inputs_copy[i].transpose((2, 0, 1))
-                inputs_copy[i] = inputs_copy[i].reshape((n, c, h, w))
+                    inputs_copy[i] = cv2.resize(inputs_copy[i], (w, h))
+                    inputs_copy[i] = inputs_copy[i].transpose((2, 0, 1))
+                    inputs_copy[i] = inputs_copy[i].reshape((n, c, h, w))
+        except Exception as e:
+            self.logger("Error while Preprocessing input(s)\n{}".format(e), is_error=True)
 
         return inputs_copy
 
@@ -169,8 +195,12 @@ class ModelBase:
     def get_model_shortname(self):
         return ""
 
-    def logger(self, message):
-        log.info("{}: [{}] {}".format(self.get_time(), self.model_name, message))
+    def logger(self, message, is_error = False):
+        message = "[{}] {}".format(self.model_name, message)
+        if is_error:
+            log.error(message)
+        else:
+            log.info(message)
 
     def init_benchmark(self):
         # model loading time, done.
@@ -223,17 +253,6 @@ class ModelBase:
 
         with open(f"output/fps.txt", "a") as f:
             f.write("{}, {}\n".format(common_data, str(fps)))
-
-        # log.info("Load time: {0}".format(str(datetime.timedelta(seconds=self.model_load_time))))
-        # fps=100/inference_time
-
-        # print(f"Time Taken to run 100 Inference is = {inference_time} seconds")
-
-        # # Write load time, inference time, and fps to txt file
-        # with open(f"/output/{args.path}.txt", "w") as f:
-        #     f.write(str(load_time)+'\n')
-        #     f.write(str(inference_time)+'\n')
-        #     f.write(str(fps)+'\n')
 
     def get_time(self):
         return time.perf_counter()
