@@ -86,7 +86,7 @@ def plot_file(filename, title, ylabel):
     # for i, v in enumerate([0, 1, 2, 4, 5, 6, 8, 9, 10, 12, 13, 14]):
     #     ax.text(v + 3, i + .25, str(v), color='blue', fontweight='bold')
 
-    plt.legend()
+    plt.legend(framealpha=0.1)
 
     plt.tight_layout()
     imagefilename = "output/{}.png".format(filename.split(".")[0])
