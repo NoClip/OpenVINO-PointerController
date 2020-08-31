@@ -19,6 +19,7 @@ class ModelBase:
         """
         self.exec_net = None
         self.device = device
+        self.extensions = extensions
         self.threshold = threshold
 
         self.model_name = self.get_model_name()
@@ -38,18 +39,17 @@ class ModelBase:
 
         self.model_precision = model_structure.split("/")[-2]
 
-
         self.ie = IECore()
         self.net = self.ie.read_network(model=model_structure, weights=model_weights)
-
 
         self.init_benchmark()
 
         try:
-            if extensions and "CPU" in device:
-                self.ie.add_extension(extensions, device)
+            if self.extensions and "CPU" in device:
+                self.ie.add_extension(self.extensions, device)
         except Exception as e:
-            self.logger("Error while loading extensions\n{}".format(e), is_error=True)
+            self.logger("Error while loading extensions: {}\n{}".format(self.extensions, e), is_error=True)
+            exit(1)
 
 
         self.check_model()
@@ -85,7 +85,7 @@ class ModelBase:
                 network=self.net, device_name=self.device, num_requests=0)
             self.model_load_time = self.get_time() - self.model_load_time
         except Exception as e:
-            self.logger("Error while loading model\n{}".format(e), is_error=True)     
+            self.logger("Error while loading model\n{}".format(e), is_error=True)
 
     def predict(self, inputs):
         """
@@ -110,8 +110,8 @@ class ModelBase:
             self.predict_start_time = self.get_time()
         try:
             # self.exec_net.requests[0].async_infer({self.input_name: image_copy})
-            self.exec_net.requests[0].async_infer(input_blobs)
-            self.exec_net.requests[0].wait(-1)
+            self.exec_net.requests[0].infer(input_blobs)
+            #self.exec_net.requests[0].wait(-1)
         except Exception as e:
             self.logger("Error while Predicting\n{}".format(e), is_error=True)
 
@@ -126,7 +126,7 @@ class ModelBase:
             self.output_start_time = self.get_time()
 
         self.logger("Preprocessing output(s)...")
-        proc_output, proc_images = None
+        # proc_output, proc_images = None
         try:
             proc_output, proc_images = self.preprocess_output(outputs, inputs)
         except Exception as e:
@@ -142,18 +142,14 @@ class ModelBase:
             # Check for unsupported layers
             if "CPU" in self.ie.available_devices:
                 supported_layers = self.ie.query_network(
-                    network=self.net, device_name=self.device
-                )
+                    network=self.net, device_name=self.device)
                 unsupported_layers = [
-                    l for l in self.net.layers.keys() if l not in supported_layers
-                ]
+                    l for l in self.net.layers.keys() if l not in supported_layers]
 
                 if unsupported_layers:
-                    log.info(
-                        "Unsupported layers found in face detection model...\n {}".format(
-                            unsupported_layers
-                        )
-                    )
+                    self.logger(
+                        "Unsupported layers found using device '{}' as below:\n{}".format(
+                            self.device, unsupported_layers), is_error=True)
                     sys.exit(1)
         except Exception as e:
             self.logger("Error while checking for unsupported layer\n{}".format(e), is_error=True)
