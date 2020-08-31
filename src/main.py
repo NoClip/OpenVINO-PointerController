@@ -14,12 +14,7 @@ from mouse_controller import MouseController
 
 log.basicConfig(level=log.INFO)
 
-
-def init_vars():
-    args = build_argparser().parse_args()
-
-    global face_model, gaze_model, head_model, landmarks_model, device, input_type, input_file, threshold, benchmark, preview
-
+def start_infer(args):
     face_model = args.facemodel
     gaze_model = args.gazemodel
     head_model = args.headmodel
@@ -32,7 +27,6 @@ def init_vars():
     benchmark = args.benchmark
     preview = args.preview
 
-def start_infer():
     feed = None
     key_pressed = None
 
@@ -216,8 +210,8 @@ def build_argparser():
     return parser
 
 def main():
-    init_vars()
-    start_infer()
+    args = build_argparser().parse_args()
+    start_infer(args)
 
 if __name__ == "__main__":
     main()
